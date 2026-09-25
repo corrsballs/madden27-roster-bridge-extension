@@ -1,0 +1,33 @@
+{
+  "manifest_version": 3,
+  "name": "Madden Roster Bridge",
+  "version": "0.2.0",
+  "description": "Courier for the Madden 27 TB Editor: pulls your Team Builder team into the site, delivers the roster you build back with one button, and EA's own Save keeps it.",
+  "permissions": [
+    "storage",
+    "unlimitedStorage",
+    "debugger"
+  ],
+  "host_permissions": [
+    "https://www.ea.com/*",
+    "https://cdn.mcr.ea.com/*"
+  ],
+  "background": {
+    "service_worker": "background.js"
+  },
+  "action": {
+    "default_title": "Open Madden Roster Bridge"
+  },
+  "content_scripts": [
+    {
+      "matches": [
+        "https://www.ea.com/*team-builder*"
+      ],
+      "js": [
+        "tb-urls.js",
+        "content.js"
+      ],
+      "run_at": "document_start"
+    }
+  ]
+}

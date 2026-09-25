@@ -1,0 +1,66 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Madden Roster Bridge diagnostics</title>
+<style>
+  :root { color-scheme: light dark; font: 14px/1.45 system-ui, sans-serif; }
+  body { max-width: 760px; margin: 24px auto; padding: 0 16px; }
+  h1 { font-size: 20px; margin: 0 0 4px; }
+  .muted { opacity: .7; }
+  .small { font-size: 12px; }
+  section { border: 1px solid color-mix(in srgb, currentColor 20%, transparent); border-radius: 8px; padding: 12px 14px; margin: 14px 0; }
+  section h2 { font-size: 15px; margin: 0 0 8px; }
+  button { font: inherit; padding: 6px 12px; border-radius: 6px; border: 1px solid color-mix(in srgb, currentColor 30%, transparent); background: transparent; cursor: pointer; }
+  button.primary { background: #0a5aab; color: #fff; border-color: #0a5aab; }
+  button:disabled { opacity: .45; cursor: default; }
+  .row { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; margin: 6px 0; }
+  #status { padding: 10px 12px; border-radius: 6px; background: color-mix(in srgb, currentColor 8%, transparent); min-height: 1.4em; }
+  #status.ok { background: rgba(40,160,80,.15); }
+  #status.warn { background: rgba(220,160,20,.18); }
+  #status.bad { background: rgba(210,50,50,.16); }
+  code, pre { font: 12px/1.4 ui-monospace, Menlo, monospace; }
+  pre { white-space: pre-wrap; word-break: break-all; max-height: 360px; overflow: auto; background: color-mix(in srgb, currentColor 6%, transparent); padding: 8px; border-radius: 6px; }
+  table { border-collapse: collapse; font-size: 13px; }
+  td, th { padding: 2px 10px 2px 0; text-align: left; vertical-align: top; }
+  select { font: inherit; max-width: 100%; }
+  label.file { display: inline-block; }
+  input[type=file] { font: inherit; }
+</style>
+</head>
+<body>
+<h1>Madden Roster Bridge diagnostics <span class="muted small" id="version"></span></h1>
+<p class="muted small">Pull and Push live on the Madden 27 TB Editor site now. This page checks the transport when a delivery fails: find your team, pull a copy, run the pass-through test, read the diagnostics. It never changes your team.</p>
+
+<div id="status" class="muted">Press <b>Find my team</b>.</div>
+
+<section>
+  <h2>1. Find and pull</h2>
+  <div class="row">
+    <button id="find" class="primary">Find my team</button>
+    <span id="urlWrap" style="display:none"><select id="url"></select></span>
+    <button id="pull" disabled>Pull team</button>
+    <button id="download" disabled>Download pulled JSON</button>
+  </div>
+  <div id="summary"></div>
+</section>
+
+<section>
+  <h2>2. Transport</h2>
+  <div class="row">
+    <button id="passthrough" disabled>Pass-through test (EA's own bytes)</button>
+    <button id="clear">Clear staged</button>
+  </div>
+  <div id="pushed" class="small" style="display:none"></div>
+  <p class="small muted">The pass-through test reloads Team Builder with EA's own, untouched roster through the same path a delivery uses. If it passes and a delivery fails, the cause is the delivered roster, not the transport.</p>
+</section>
+
+<section>
+  <h2>Diagnostics</h2>
+  <div class="row"><button id="diag">Run diagnostics</button></div>
+  <pre id="diagOut" style="display:none"></pre>
+</section>
+
+<script src="diagnostics.js"></script>
+</body>
+</html>
