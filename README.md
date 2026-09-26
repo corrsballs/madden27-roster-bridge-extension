@@ -14,9 +14,43 @@ Nothing leaves your browser. Not affiliated with Electronic Arts.
 
 ## Install
 
-1. Download this repository (**Code**, then **Download ZIP**) and unzip it.
-2. Open `chrome://extensions` and turn on **Developer mode** (top right).
-3. Click **Load unpacked** and select the unzipped folder.
+Works in Chrome on a computer (Edge and Brave run Chrome extensions too, but only Chrome is tested). Not on
+phones or consoles. Team Builder rosters only reach the game through **Online
+Franchise**.
+
+1. On this page click the green **Code** button, then **Download ZIP**.
+2. Unzip it. Move the folder somewhere it can stay (Documents, not Downloads):
+   Chrome runs the extension from that folder, so deleting or moving it later
+   removes the extension.
+3. In Chrome open `chrome://extensions` (paste it into the address bar).
+4. Turn on **Developer mode** (switch at the top right).
+5. Click **Load unpacked** and pick the unzipped folder: the one that has
+   `manifest.json` directly inside it. If Chrome says the manifest is missing,
+   you picked the outer folder; open it and pick the folder inside.
+6. Optional: click the puzzle piece on the toolbar and pin **Madden Roster
+   Bridge** so the red 27 icon stays visible.
+7. Open **https://madden27-tb-editor.com** and, in another tab, your team in
+   Team Builder (My Teams, Edit). If the site had been open already, refresh it
+   once so it finds the extension.
+
+Chrome may show a *"Disable developer mode extensions"* notice when it starts.
+Click the X to keep the extension; it is the normal warning for anything not
+installed from the Chrome Web Store.
+
+## Use
+
+1. **Pull** on the site to load your Team Builder team.
+2. Build or generate your roster.
+3. **Push** on the site. The Team Builder tab reloads with the new roster.
+4. Press **Save** in Team Builder. Nothing is kept until you do.
+
+Keep one Team Builder tab open while you Push.
+
+## Update
+
+Download the new ZIP, replace the files in your folder with the new ones, then
+click the reload arrow on the extension's card in `chrome://extensions`. Or
+remove the old one and Load unpacked again.
 
 ## Permissions: what they're for
 
