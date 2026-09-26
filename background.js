@@ -158,12 +158,18 @@ async function liveTeamBuilderTabs() {
     }));
 }
 
-async function pickTeamBuilderTab(preferTeamId = "") {
+const newestTab = list => list.find(tab => tab.active) || [ ...list ].sort((a, b) => b.lastAccessed - a.lastAccessed)[0];
+
+async function pickTeamBuilderTab(preferTeamId = "", preferTabId = null) {
     const tabs = await liveTeamBuilderTabs();
     if (!tabs.length) return null;
+    if (typeof preferTabId === "number") {
+        const held = tabs.find(tab => tab.tabId === preferTabId);
+        if (held && (!preferTeamId || !held.teamId || held.teamId === preferTeamId)) return held;
+    }
     if (preferTeamId) {
         const mine = tabs.filter(tab => tab.teamId === preferTeamId);
-        if (mine.length) return mine.find(tab => tab.active) || mine[0];
+        if (mine.length) return newestTab(mine);
         if (tabs.length > 1) {
             const shown = tabs.map(tab => tab.teamId || "(no team in URL)").join(", ");
             throw new Error(`That roster belongs to team ${preferTeamId}, but no open Team Builder tab is ` + `showing it (open tabs: ${shown}). Open that team and try again.`);
@@ -171,7 +177,7 @@ async function pickTeamBuilderTab(preferTeamId = "") {
     }
     const withTeam = tabs.filter(tab => tab.teamId);
     const pool = withTeam.length ? withTeam : tabs;
-    return pool.find(tab => tab.active) || pool.sort((a, b) => b.lastAccessed - a.lastAccessed)[0];
+    return newestTab(pool);
 }
 
 async function teamIdForUrl(url) {
@@ -626,7 +632,7 @@ function handle(message, sendResponse) {
             return false;
         }
         (async () => {
-            const tab = await pickTeamBuilderTab(await teamIdForUrl(url));
+            const tab = await pickTeamBuilderTab(await teamIdForUrl(url), message.tabId);
             if (!tab) throw new Error("No Team Builder tab is open. Open your team, then push again.");
             const record = {
                 url: url,
@@ -751,7 +757,7 @@ chrome.runtime.onConnect.addListener(port => {
     if (port.name === "mrb-bridge") bridgePort(port);
 });
 
-const SITE_URL = "";
+const SITE_URL = "https://madden27-tb-editor.com/";
 
 const DIAGNOSTICS_URL = chrome.runtime.getURL("diagnostics.html");
 

@@ -1,7 +1,7 @@
 (function() {
     const PROTOCOL_VERSION = 2;
     const MARK = "mrb-bridge";
-    const SITE_ORIGINS = [];
+    const SITE_ORIGINS = [ "https://madden27-tb-editor.com" ];
     const DEV_ORIGIN = /^http:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/;
     const ALLOW_DEV_ORIGIN = false;
     const originAllowed = origin => ALLOW_DEV_ORIGIN && DEV_ORIGIN.test(String(origin || "")) || SITE_ORIGINS.includes(origin);

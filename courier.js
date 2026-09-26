@@ -6,6 +6,14 @@ const KEY_COURIER_LAST = "mrb.courier.lastPull";
 
 const COURIER_CONFIRM_TIMEOUT_MS = 5 * 60 * 1e3;
 
+const COURIER_KEEPALIVE_MS = 2e4;
+
+const courierPing = () => {
+    try {
+        chrome.runtime.getPlatformInfo(() => {});
+    } catch {}
+};
+
 const courierSleep = ms => new Promise(resolve => setTimeout(resolve, ms));
 
 const deliveryLocks = new Set;
@@ -64,13 +72,14 @@ function reconcileReport(r, teamName) {
         adoptSkipped: r.adoptSkipped,
         built: r.built,
         pulled: r.pulled,
+        matched: r.matched,
         rows: (r.perPosition || []).filter(e => e.built !== e.pulled)
     };
 }
 
 function courierNotServed(status) {
     const detail = status.pageError && status.pageError.text && `Team Builder threw: ${status.pageError.text}` || status.pageLog && status.pageLog.text && `Team Builder logged: ${status.pageLog.text}` || status.lastError && `The extension reported: ${status.lastError}` || "nothing was recorded, which usually means the roster request never reached that tab.";
-    return `Your roster was NOT served — Team Builder reloaded with EA's own copy, so nothing ` + `was delivered. ${detail} Check the yellow "debugging this browser" banner appeared on the ` + `Team Builder tab, then send again.`;
+    return `Your roster was not served. Team Builder reloaded with EA's own copy, so nothing ` + `was delivered. ${detail} Check that the yellow "debugging this browser" banner appeared on ` + `the Team Builder tab, then send again.`;
 }
 
 async function courierPull(send) {
@@ -81,7 +90,7 @@ async function courierPull(send) {
     const liveTeams = [ ...new Set(live.map(t => t.teamId).filter(Boolean)) ];
     if (liveTeams.length > 1) {
         send("BRIDGE_FAIL", {
-            error: `${live.length} Team Builder tabs showing ${liveTeams.length} different teams are ` + "open — there is no way to know which team you mean. Close the other Team Builder " + "tabs, leave the team you want open on its BRAND tab, and try again."
+            error: `${live.length} Team Builder tabs showing ${liveTeams.length} different teams are ` + "open, so there is no way to know which team you mean. Close the other Team Builder " + "tabs, keep only the team you want open in Team Builder (any tab of its editor), and " + "try again."
         });
         return null;
     }
@@ -96,7 +105,7 @@ async function courierPull(send) {
     }
     if (!found.tab) {
         send("BRIDGE_FAIL", {
-            error: "No Team Builder tab found. Open your team at ea.com → Team Builder (the Roster tab), " + "then try again. If it IS open, reload that tab once — a tab opened before the " + "extension loaded is invisible to it."
+            error: "No Madden Team Builder tab found. Open your team at ea.com in Team Builder (the " + "Roster tab), then try again. If it is open, reload that tab once: a tab opened before " + "the extension loaded is invisible to it."
         });
         return null;
     }
@@ -111,13 +120,13 @@ async function courierPull(send) {
     }
     if (!teamId) {
         send("BRIDGE_FAIL", {
-            error: "Team Builder is open, but the tab isn't showing a team id and no team has been " + "pulled yet this session — open your team and switch to its BRAND tab (the address bar " + "shows …/team-builder/team-create/brand/…), then try again."
+            error: "Team Builder is open, but the tab isn't showing a team id and no team has been " + "pulled yet this session. Open your team in Team Builder (the address bar shows " + "…/team-builder/team-create/<tab>/<team id>), then try again."
         });
         return null;
     }
     if (!entry) {
         send("BRIDGE_FAIL", {
-            error: "This team's roster file has not been seen yet. Open the ROSTER tab on the Team " + "Builder page once so it downloads, then try again."
+            error: "This team's roster file has not been seen yet. Open the Roster tab on the Team " + "Builder page once so it downloads, then try again."
         });
         return null;
     }
@@ -130,14 +139,14 @@ async function courierPull(send) {
     });
     if (!pulled.ok) {
         send("BRIDGE_FAIL", {
-            error: `download failed: ${pulled.error}`
+            error: `Download failed: ${pulled.error}`
         });
         return null;
     }
     const shapeBad = rosterShapeError(pulled.text);
     if (shapeBad) {
         send("BRIDGE_FAIL", {
-            error: `pulled roster rejected: ${shapeBad}`
+            error: `Pulled roster rejected: ${shapeBad}`
         });
         return null;
     }
@@ -208,14 +217,14 @@ async function runCourier(build, send, state) {
     const BF = self.CFB27BuildFile;
     const bad = BF.validate(build);
     if (bad) return send("BRIDGE_FAIL", {
-        error: `build-file rejected: ${bad}`
+        error: `Build file rejected: ${bad}`
     });
     const got = await courierSerial(async () => {
         const g = await courierPull(send);
         if (!g) return null;
         if (g.tabId != null && deliveryLocks.has(g.tabId)) {
             send("BRIDGE_FAIL", {
-                error: "A delivery is already running — wait for it to finish."
+                error: "A delivery is already running. Wait for it to finish."
             });
             return null;
         }
@@ -261,30 +270,36 @@ async function runCourier(build, send, state) {
     });
     if (r.mismatch) {
         const token = `${Date.now()}-${Math.random().toString(36).slice(2)}`;
-        const answer = await new Promise(resolve => {
-            state.confirm = {
-                token: token,
-                resolve: resolve
-            };
-            send("BRIDGE_PROGRESS", {
-                phase: "confirm",
-                token: token,
-                report: reconcileReport(r, teamName)
+        const keepAlive = setInterval(courierPing, COURIER_KEEPALIVE_MS);
+        let answer;
+        try {
+            answer = await new Promise(resolve => {
+                state.confirm = {
+                    token: token,
+                    resolve: resolve
+                };
+                send("BRIDGE_PROGRESS", {
+                    phase: "confirm",
+                    token: token,
+                    report: reconcileReport(r, teamName)
+                });
+                setTimeout(() => {
+                    if (state.confirm && state.confirm.token === token) {
+                        state.confirm = null;
+                        resolve({
+                            proceed: false,
+                            timeout: true
+                        });
+                    }
+                }, COURIER_CONFIRM_TIMEOUT_MS);
             });
-            setTimeout(() => {
-                if (state.confirm && state.confirm.token === token) {
-                    state.confirm = null;
-                    resolve({
-                        proceed: false,
-                        timeout: true
-                    });
-                }
-            }, COURIER_CONFIRM_TIMEOUT_MS);
-        });
+        } finally {
+            clearInterval(keepAlive);
+        }
         if (!answer.proceed) {
             return send("BRIDGE_FAIL", {
                 cancelled: true,
-                error: answer.timeout ? "No answer to the shape-mismatch report — nothing was pushed." : "Cancelled — nothing was pushed. Your Team Builder team is untouched."
+                error: answer.timeout ? "No answer to the shape-mismatch report, so nothing was pushed." : "Cancelled. Nothing was pushed; your Team Builder team is untouched."
             });
         }
     }
@@ -300,10 +315,13 @@ async function runCourier(build, send, state) {
         text: JSON.stringify(work),
         teamName: teamName,
         players: players,
-        opId: opId
+        opId: opId,
+        ...typeof got.tabId === "number" ? {
+            tabId: got.tabId
+        } : {}
     });
     if (!pushed.ok) return send("BRIDGE_FAIL", {
-        error: `push failed: ${pushed.error}`
+        error: `Push failed: ${pushed.error}`
     });
     let served = null;
     for (let i = 0; i < COURIER_VERIFY_TRIES && !served; i++) {
@@ -409,7 +427,7 @@ function bridgePort(port) {
         if (type === "BRIDGE_PULL") {
             if (state.running) {
                 return send("BRIDGE_FAIL", {
-                    error: "A delivery is already running — wait for it to finish."
+                    error: "A delivery is already running. Wait for it to finish."
                 });
             }
             state.running = true;
@@ -424,7 +442,7 @@ function bridgePort(port) {
         if (type === "BRIDGE_SEND") {
             if (state.running) {
                 return send("BRIDGE_FAIL", {
-                    error: "A delivery is already running — wait for it to finish."
+                    error: "A delivery is already running. Wait for it to finish."
                 });
             }
             state.running = true;

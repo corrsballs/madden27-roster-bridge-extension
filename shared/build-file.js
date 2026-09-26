@@ -5,7 +5,7 @@ function initCFB27BuildFile({constants: constants, presets: presets, catalog: ca
     const POSITION_ORDER = Object.keys(POSITION_CODES).sort((a, b) => a - b).map(k => POSITION_CODES[k]);
     const CODES = D.positionCodes || {};
     const posOfRow = p => CODES[String(parseInt(p.PLYR_POSITION, 10))] || "?";
-    const BASE_PLAYER_FIELDS = [ "PLYR_FIRSTNAME", "PLYR_LASTNAME", "PLYR_HEIGHT", "PLYR_WEIGHT", "PLYR_JERSEYNUM", "PLYR_HOME_TOWN", "PLYR_HOME_STATE", "PLYR_SKINTONE", "PLYR_PORTRAIT", "PLYR_AGE", "PLYR_YEARSPRO", "PLYR_DRAFTROUND", "PLYR_DRAFTPICK", "PLYR_DRAFTTEAM", "PLYR_OVERALLRATING", "PLYR_PLAYERTYPE", "PLYR_TRAITDEVELOPMENT" ];
+    const BASE_PLAYER_FIELDS = [ "PLYR_FIRSTNAME", "PLYR_LASTNAME", "PLYR_HEIGHT", "PLYR_WEIGHT", "PLYR_JERSEYNUM", "PLYR_HOME_TOWN", "PLYR_HOME_STATE", "PLYR_SKINTONE", "PLYR_PORTRAIT", "PLYR_AGE", "PLYR_YEARSPRO", "PLYR_DRAFTROUND", "PLYR_DRAFTPICK", "PLYR_DRAFTTEAM", "PLYR_OVERALLRATING", "PLYR_PLAYERTYPE", "PLYR_TRAITDEVELOPMENT", "PLYR_LONGSNAPRATING" ];
     const EXCLUDED_PLAYER_FIELDS = [ "PLYR_POSITION" ];
     const PLAYER_FIELDS = [ ...new Set([ ...BASE_PLAYER_FIELDS, ...Object.values(D.attrToJson || {}) ]) ];
     const VISUAL_FIELDS = [ "firstName", "lastName", "jerseyName", "heightInches", "weightPounds", "jerseyNumber", "skinTone", "genericHeadName", "genericHead" ];
@@ -372,7 +372,7 @@ function initCFB27BuildFile({constants: constants, presets: presets, catalog: ca
             return report(esc(build.error), "bad");
         }
         trackBuild("build_export", "ok");
-        const name = `cfb27-build-${(build.shape || "custom").toLowerCase().replace(/\s+/g, "-")}-${build.createdAt.slice(0, 10)}.json`;
+        const name = `madden27-build-${(build.shape || "custom").toLowerCase().replace(/\s+/g, "-")}-${build.createdAt.slice(0, 10)}.json`;
         const blob = new Blob([ JSON.stringify(build) ], {
             type: "application/json"
         });
@@ -408,7 +408,7 @@ function initCFB27BuildFile({constants: constants, presets: presets, catalog: ca
         }
         if (window.CFB27Transport?.scratchMode?.()) {
             trackBuild("build_import", "error");
-            return report("This roster was built from scratch; a build imports onto a REAL team. " + "Use Find my team and Pull team first, then import.", "bad");
+            return report("This roster was built from scratch; a build loads onto a real team. " + "Press <b>Pull from Team Builder</b> first, then <b>Load build</b>.", "bad");
         }
         f.text().then(text => {
             let build;
@@ -432,7 +432,7 @@ function initCFB27BuildFile({constants: constants, presets: presets, catalog: ca
             window.CFB27Predict?.update?.();
             if (typeof changeBlip === "function") changeBlip();
             console.info(`[CFB27] transplant: ${r.matched}/${r.built} build slots copied onto ` + `${r.pulled} pulled players (${f.name})` + (r.adopted ? `; shape → ${r.buildShape || "custom"}, ${r.reslotMoves} moved, preset id left as pulled` : ""));
-            report(`Transplanted <b>${r.matched} of ${r.built}</b> built players onto this team.\n        The team keeps its own name, colors and stadium.${shapeHtml(r)}${reconcileHtml(r)}\n        <br>Now <b>Push to Team Builder</b>, then <b>Apply ★/RS in TB</b>, then press\n        <b>Save</b> in Team Builder.`, r.mismatch ? "warn" : "ok");
+            report(`Transplanted <b>${r.matched} of ${r.built}</b> built players onto this team.\n        The team keeps its own name, colors and stadium.${shapeHtml(r)}${reconcileHtml(r)}\n        <br>Now <b>Push to Team Builder</b>, then press <b>Save</b> in Team Builder.`, r.mismatch ? "warn" : "ok");
         }).catch(error => {
             console.error("[CFB27] build import failed", error);
             trackBuild("build_import", "error");

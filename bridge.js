@@ -23,7 +23,7 @@
             if (inFlight) {
                 inFlight = false;
                 postToPage("BRIDGE_FAIL", {
-                    error: "The extension went away mid-delivery (service worker dropped or extension " + "reloaded). Check Team Builder — if its tab did not reload with your roster, " + "send again."
+                    error: "The extension went away mid-delivery (service worker dropped or extension " + "reloaded). Check Team Builder: if its tab did not reload with your roster, " + "send again."
                 });
             }
         });
@@ -46,7 +46,7 @@
             port = null;
             inFlight = false;
             postToPage("BRIDGE_FAIL", {
-                error: "Could not reach the extension — it may have just updated. Reload this page and try again."
+                error: "Could not reach the extension; it may have just updated. Reload this page and try again."
             });
         }
     });

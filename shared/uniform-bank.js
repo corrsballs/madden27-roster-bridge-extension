@@ -47,11 +47,29 @@
     }
     function teamLabelOf(work) {
         const ti = tiOf(work) || {};
-        const parts = [ ti.TEAM_NAME, ti.TEAM_NICKNAME ].filter(s => typeof s === "string" && s.trim());
-        if (parts.length) return parts.join(" ").trim();
+        const G = typeof window !== "undefined" ? window : typeof self !== "undefined" ? self : globalThis;
+        if (typeof G.CFB27TeamName === "function") {
+            const shown = G.CFB27TeamName(ti);
+            if (shown) return shown;
+        }
+        const clean = v => typeof v === "string" ? v.replace(/\s+/g, " ").trim() : "";
+        const name = clean(ti.TEAM_NAME) || clean(ti.TEAM_NICKNAME);
+        const city = clean(ti.CITY_NAME);
+        if (name) return !city || name.toLowerCase().includes(city.toLowerCase()) ? name : `${city} ${name}`;
+        if (city) return city;
         const md = work?.metadata || {};
         const alt = [ md.teamDisplayName, md.teamNickname ].filter(s => typeof s === "string" && s.trim());
-        return alt.length ? alt.join(" ").trim() : "";
+        return alt.length ? undoubled([ ...new Set(alt.map(a => a.trim())) ].join(" ")) : "";
+    }
+    function undoubled(label) {
+        const s = String(label ?? "").replace(/\s+/g, " ").trim();
+        const words = s.split(" ");
+        if (words.length % 2 === 0) {
+            const half = words.length / 2;
+            const a = words.slice(0, half).join(" ");
+            if (a && a.toLowerCase() === words.slice(half).join(" ").toLowerCase()) return a;
+        }
+        return s;
     }
     function brandIdOf(work) {
         const b = tiOf(work)?.BRAND_ID;
@@ -415,7 +433,7 @@
         const prefix = prefixOf(work);
         const assetName = assetNameOf(work);
         if (assetName !== bundle.assetName || prefix !== bundle.prefix) {
-            let from = bundle.teamLabel || bundle.assetName;
+            let from = undoubled(bundle.teamLabel) || bundle.assetName;
             let onto = teamLabelOf(work) || assetName || "this team";
             if (from === onto) {
                 from = String(bundle.assetName);
@@ -644,7 +662,7 @@
         const prefix = prefixOf(work);
         if (assetName !== bundle.assetName || prefix !== bundle.prefix) {
             return {
-                error: `This design was banked from ${bundle.teamLabel || bundle.assetName}, so it cannot go on ${teamLabelOf(work) || assetName || "this team"}. Same team only.`
+                error: `This design was banked from ${undoubled(bundle.teamLabel) || bundle.assetName}, so it cannot go on ${teamLabelOf(work) || assetName || "this team"}. Same team only.`
             };
         }
         if (typeof toSlot !== "number" || !Number.isInteger(toSlot)) {
@@ -850,6 +868,7 @@
         prefixOf: prefixOf,
         assetNameOf: assetNameOf,
         teamLabelOf: teamLabelOf,
+        undoubled: undoubled,
         brandIdOf: brandIdOf,
         imagesOf: imagesOf,
         uniformsOf: uniformsOf,

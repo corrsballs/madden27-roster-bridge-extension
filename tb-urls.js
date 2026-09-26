@@ -2,7 +2,7 @@ const ROSTER_JSON = /^https:\/\/cdn\.mcr\.ea\.com\/\d+\/bundles-users\/[^/]+\/[^
 
 const TEAM_PAGE = /\/team-builder\/(?:team-create\/[a-z-]+|preview)\/([^/?#]+)/i;
 
-const TEAM_BUILDER_PAGE = /^https:\/\/www\.ea\.com\/[^?#]*\/team-builder(?:[/?#]|$)/i;
+const TEAM_BUILDER_PAGE = /^https:\/\/www\.ea\.com\/[^?#]*\/madden-nfl\/team-builder(?:[/?#]|$)/i;
 
 const EA_CDN = /^https:\/\/cdn\.mcr\.ea\.com\//i;
 

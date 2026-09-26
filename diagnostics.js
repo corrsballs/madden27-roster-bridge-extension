@@ -13,6 +13,10 @@
     let sourceUrl = "";
     let pulledText = "";
     let work = null;
+    function setDisabled(id, value) {
+        el(id).disabled = value;
+        el(id).dataset.set = "1";
+    }
     function say(html, kind) {
         const s = el("status");
         s.className = kind || "";
@@ -56,8 +60,8 @@
         const select = el("url");
         select.innerHTML = candidates.length ? candidates.map((e, i) => `<option value="${i}">${esc(describe(e))}</option>`).join("") : "";
         el("urlWrap").style.display = candidates.length > 1 ? "" : "none";
-        el("pull").disabled = !candidates.length;
-        el("passthrough").disabled = !candidates.length;
+        setDisabled("pull", !candidates.length);
+        setDisabled("passthrough", !candidates.length);
         if (!candidates.length) {
             say(tab ? "Team Builder is open, but its roster file has not been requested yet. Click into the <b>Roster</b> tab on that page, then press Find my team again." : "No Madden Team Builder tab found. Open your team at ea.com Team Builder, then press Find my team. If it is open, run <b>Diagnostics</b>: incognito windows, another Chrome profile, or a tab opened before the extension loaded are the usual causes.", "warn");
             return;
@@ -111,7 +115,7 @@
         sourceUrl = entry.url;
         pulledText = r.text;
         work = parsed;
-        el("download").disabled = false;
+        setDisabled("download", false);
         renderSummary();
         say(`Pulled <b>${Object.keys(work.teamData.roster.playerData).length} players</b> (${(pulledText.length / 1048576).toFixed(2)} MB). Fingerprint <code>${fingerprint(pulledText)}</code>. Download keeps a copy; nothing here pushes.`, "ok");
     }
@@ -168,11 +172,36 @@
         say(r.ok ? "Cleared the staged roster and detached the debugger." : `Clear failed: ${esc(r.error)}`, r.ok ? "ok" : "bad");
         el("pushed").style.display = "none";
     }
-    el("find").addEventListener("click", () => refresh(false));
-    el("pull").addEventListener("click", pull);
+    const BUTTONS = [ "find", "pull", "download", "passthrough", "clear", "diag" ];
+    let busy = false;
+    const guarded = fn => async () => {
+        if (busy) return;
+        busy = true;
+        const before = new Map(BUTTONS.map(id => [ id, el(id).disabled ]));
+        for (const id of BUTTONS) {
+            delete el(id).dataset.set;
+            el(id).disabled = true;
+        }
+        document.body.setAttribute("aria-busy", "true");
+        try {
+            await fn();
+        } finally {
+            for (const id of BUTTONS) {
+                if (el(id).dataset.set === "1") {
+                    delete el(id).dataset.set;
+                    continue;
+                }
+                el(id).disabled = before.get(id);
+            }
+            document.body.removeAttribute("aria-busy");
+            busy = false;
+        }
+    };
+    el("find").addEventListener("click", guarded(() => refresh(false)));
+    el("pull").addEventListener("click", guarded(pull));
     el("download").addEventListener("click", download);
-    el("passthrough").addEventListener("click", passthrough);
-    el("clear").addEventListener("click", clearStaged);
-    el("diag").addEventListener("click", diag);
+    el("passthrough").addEventListener("click", guarded(passthrough));
+    el("clear").addEventListener("click", guarded(clearStaged));
+    el("diag").addEventListener("click", guarded(diag));
     refresh(true);
 })();

@@ -85,7 +85,7 @@ function initCFB27Template({template: template, presets: presets, constants: con
         const free = pos => work[pos] - seated[pos].length;
         const seats = [], overflow = [], delta = {};
         for (const pick of picks || []) {
-            const elig = POSITION_ORDER.filter(pos => (slotSources[pos] || []).includes(pick.group));
+            const elig = POSITION_ORDER.filter(pos => pick.positions ? pick.positions.includes(pos) : (slotSources[pos] || []).includes(pick.group));
             if (!elig.length) {
                 overflow.push({
                     ...pick,
@@ -183,7 +183,7 @@ function initCFB27Template({template: template, presets: presets, constants: con
         '"': "&quot;",
         "'": "&#39;"
     }[c]));
-    const opt = p => `<option value="${esc(p.eaName)}">${esc(p.eaName)}</option>`;
+    const opt = p => `<option value="${esc(p.eaName)}">${esc(p.eaName)} · ${totalOf(p.counts)} players</option>`;
     function paintPicker() {
         const sel = el("tbShape");
         if (!sel || !LIST.length) return;
@@ -257,7 +257,7 @@ function initCFB27Template({template: template, presets: presets, constants: con
         sel.value = found ? found.eaName : "__custom";
         sel.disabled = false;
         const ti = WORK.teamData?.teamInfos || {};
-        const ids = `templateId ${WORK.teamData?.roster?.templateId ?? "—"}` + `, MY_SCHOOL_TEMPLATE_ID ${ti.MY_SCHOOL_TEMPLATE_ID ?? "—"}` + `, metadata ${WORK.metadata?.mySchoolTemplateId ?? "—"}`;
+        const ids = `templateId ${WORK.teamData?.roster?.templateId ?? "–"}` + `, MY_SCHOOL_TEMPLATE_ID ${ti.MY_SCHOOL_TEMPLATE_ID ?? "–"}` + `, metadata ${WORK.metadata?.mySchoolTemplateId ?? "–"}`;
         const claims = LIST.find(p => p.selectValue === WORK.teamData?.roster?.templateId);
         console.info(`[Madden 27 Editor] shape: the players are ${found ? found.eaName : "a custom shape"}; ` + `the stored ids say ${claims ? claims.eaName : "no preset we know"} (${ids})` + (claims && found && claims.eaName !== found.eaName ? "; THEY DISAGREE, which is normal for an EA payload and harmless; the players are the truth" : ""));
         const wrap = el("tbShapeWrap");
