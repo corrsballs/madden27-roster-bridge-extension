@@ -10,7 +10,9 @@ it too). In Team Builder open your team (My Teams, Edit), then use **Pull** and
 **Push** on the site and press Save in Team Builder. A small diagnostics page is
 under the extension's **Options**.
 
-Nothing leaves your browser. Not affiliated with Electronic Arts.
+The extension transfers your roster between the editor and Team Builder. The editor
+uses its secured server for generation and rating calculations; it does not store
+submitted rosters. Saved rosters stay in your browser. Not affiliated with Electronic Arts.
 
 ## Install
 

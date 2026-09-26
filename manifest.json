@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "Madden Roster Bridge",
-  "version": "0.3.1",
+  "version": "0.3.2",
   "description": "Courier for the Madden 27 TB Editor: pulls your Team Builder team into the site, delivers the roster you build back with one button, and EA's own Save keeps it.",
   "permissions": [
     "storage",

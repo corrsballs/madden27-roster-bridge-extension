@@ -785,6 +785,35 @@ chrome.action.onClicked.addListener(() => {
 
 const TEXTURE_BYTES_MAX = 8 * 1024 * 1024;
 
+async function readImageBytes(response, maxBytes) {
+    const announced = Number(response.headers.get("content-length"));
+    if (Number.isFinite(announced) && announced > maxBytes) {
+        await (response.body?.cancel());
+        throw new Error("Image exceeds the size limit");
+    }
+    const reader = response.body?.getReader();
+    if (!reader) return new Uint8Array;
+    let size = 0;
+    const chunks = [];
+    while (true) {
+        const {done: done, value: value} = await reader.read();
+        if (done) break;
+        size += value.byteLength;
+        if (size > maxBytes) {
+            await reader.cancel();
+            throw new Error("Image exceeds the size limit");
+        }
+        chunks.push(value);
+    }
+    const bytes = new Uint8Array(size);
+    let offset = 0;
+    for (const chunk of chunks) {
+        bytes.set(chunk, offset);
+        offset += chunk.byteLength;
+    }
+    return bytes;
+}
+
 async function textureFetch(url, method) {
     const P = self.CFB27BridgeProtocol;
     const ctl = new AbortController;
@@ -794,10 +823,11 @@ async function textureFetch(url, method) {
             method: method,
             cache: "no-store",
             credentials: "omit",
+            redirect: "error",
             signal: ctl.signal
         });
         if (res.url && P.textureVerdict(res.url) !== "fetch") return null;
-        const buf = method === "GET" && res.ok ? new Uint8Array(await res.arrayBuffer()) : null;
+        const buf = method === "GET" && res.ok ? await readImageBytes(res, TEXTURE_BYTES_MAX) : null;
         return {
             res: res,
             buf: buf

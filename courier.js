@@ -173,15 +173,20 @@ const LOGO_CDN = /^https:\/\/cdn\.mcr\.ea\.com\//i;
 const LOGO_MAX_BYTES = 2 * 1024 * 1024;
 
 async function pullLogo(work) {
+    const ctl = new AbortController;
+    const timer = setTimeout(() => ctl.abort(), 5e3);
     try {
         const meta = JSON.parse(work?.teamData?.teamInfos?.TEAM_PRIMARY_LOGO || "null");
         const url = meta && typeof meta.pngUrl === "string" ? meta.pngUrl : null;
         if (!url || !LOGO_CDN.test(url)) return null;
         const response = await fetch(url, {
-            cache: "no-store"
+            cache: "no-store",
+            credentials: "omit",
+            redirect: "error",
+            signal: ctl.signal
         });
         if (!response.ok) return null;
-        const bytes = new Uint8Array(await response.arrayBuffer());
+        const bytes = await readImageBytes(response, LOGO_MAX_BYTES);
         if (!bytes.length || bytes.length > LOGO_MAX_BYTES) return null;
         let bin = "";
         for (let i = 0; i < bytes.length; i += 32768) {
@@ -194,6 +199,8 @@ async function pullLogo(work) {
         };
     } catch {
         return null;
+    } finally {
+        clearTimeout(timer);
     }
 }
 
